@@ -16,4 +16,4 @@
 
 ## Etapa de construção do código
 1. Foram importadas todas as bibliotecas necessárias logo no primeiro bloco de código
-2. 
+2. Codigo inicial criado, adquações devem ser feitas posteriormente.
