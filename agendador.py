@@ -1,18 +1,21 @@
 import sys
 import time
 import threading
-from PyQt5.QtWidgets import QApplication, QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget, QListWidget
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtWidgets import QApplication, QLabel, QLineEdit, QPushButton, QVBoxLayout, QWidget, QListWidget, QTimeEdit
+from PyQt5.QtCore import Qt, QTimer, QTime
 
 class TaskSchedulerWidget(QWidget):
     def __init__(self):
         super().__init__()
-        # Define um título para o Widget 
+        # Define um título para o Widget    
         self.setWindowTitle('Tarefas')
         #self.setWindowFlags(Qt.Tool)
         # Atributo que o deixa transparente na tela
         #self.setAttribute(Qt.WA_TranslucentBackground)
         self.setGeometry(1600, 40, 300, 400)
+
+        #Carregamento das tarefas agendadas
+        self.load_tasks_from_file()
 
         layout = QVBoxLayout()
 
@@ -34,6 +37,10 @@ class TaskSchedulerWidget(QWidget):
         ## Bloco Entrada de tarefas
         self.task_entry = QLineEdit(self)
         layout.addWidget(self.task_entry)
+        #Adição da hora marcada
+        self.time_entry = QTimeEdit(self)
+        layout.addWidget(self.time_entry)
+        
 
         ## Bloco de botão de adicinar tarefa
         self.add_button = QPushButton("Adicionar Tarefa", self)
@@ -41,9 +48,9 @@ class TaskSchedulerWidget(QWidget):
         layout.addWidget(self.add_button)
 
         self.setLayout(layout)
-
+        
         ## Termino dos blocos
-        self.tasks = []
+        self.tasks = [self.tasks]
         self.task_thread = None
 
         #atualiza o relógio a cada 1000 milesegundo (1 segundo)
@@ -53,20 +60,47 @@ class TaskSchedulerWidget(QWidget):
 
     ## Blocos de funcionalidades
 
+    #carregamento das tarefas anteriores
+    def load_tasks_from_file(self):
+        try:
+            with open('tasks.txt', 'r') as file:
+                for line in file:
+                    self.taskss.append(line.strip())
+        except FileNotFoundError:
+            pass  # Arquivo não existe ainda, pode ser a primeira execução
+
+    #função de salvamento das tarefas ao fechar
+    def closeEvent(self, event):
+        self.save_tasks_to_file()
+        super().closeEvent(event)
+
+    def save_tasks_to_file(self):
+        with open('tasks.txt', 'w') as file:
+            for task in self.tasks:
+                file.write(task + '\n')
+
     # Função que cria o relógio
     def update_time(self):
-        current_time = time.strftime('%H:%M:%S')
-        self.clock_label.setText(current_time)
+        current_time = QTime.currentTime()
+        formatted_time = current_time.toString("HH:mm:ss")
+        self.label.setText("Hora atual: " + formatted_time)
 
     # Função de adição de tarefa a lista de tarefas
     def add_task(self):
+        #Pega o texto da tarefa digitada
         task = self.task_entry.text()
-        self.task_list.addItem(task)
-        self.tasks.append(task)
+        #Pega o horário da tarefa digitada
+        time = self.time_entry.time().toString("HH:mm")
+        # Combinação de hora e tarefa
+        full_task = f"{time} - {task}"  
+        self.task_list.addItem(full_task)
+        self.tasks.append(full_task)
         self.task_entry.clear()
 
     # Função de exibir a notificação quando ha tarefa ativa
-    def execute_task(self, task):
+    def execute_task(self, full_task):
+        # Separar a hora da tarefa
+        task = full_task.split(" - ")[1]  
         self.show_notification(task)
 
     # Percorre todas as tarefas na lista, cria uma nova thread para cada tarefa e inicia essa thread. 
@@ -79,9 +113,11 @@ class TaskSchedulerWidget(QWidget):
 
     # Responsável por verificar continuamente se é o momento de executar uma tarefa agendada
     def run_schedule(self, task):
+        # Obter a hora da tarefa
+        target_time = task.split(" - ")[0]  
         while True:
             current_time = time.strftime('%H:%M')
-            if current_time == '11:15':
+            if current_time == target_time:
                 self.execute_task(task)
             time.sleep(60)  # Verificar a cada minuto
 
