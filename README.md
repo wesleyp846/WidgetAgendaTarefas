@@ -1,1 +1,1 @@
-# WidgetAgendaTarefas
+# Agendador de tarefas em formato Widget
