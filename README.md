@@ -1,3 +1,5 @@
+# Projeto em pausa
+
 # Agendador de tarefas em formato Widget
 
 ## GitCli
